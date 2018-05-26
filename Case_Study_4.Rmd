@@ -1,0 +1,111 @@
+---
+title: "Case Study 4"
+output: html_notebook
+---
+```{r}
+install.packages('ggplot2')
+```
+
+```{r}
+# Read the data file
+gauge = read.table("gauge.txt", header = TRUE)
+gauge <- gauge[c("gain", "density")]
+summary(gauge$gain)
+```
+
+```{r}
+# Make the scatter plot
+plot(gauge, main = "Scatter Plot of Gain to Density (+ LS Regression Line)", 
+     xlab = "Gain", ylab = "Density")
+
+# Because it seems like the plot is following an exponential decay, we take log of gain
+gauge[, 1] <- log(gauge[,1])
+
+# Make the scatter plot again
+plot(gauge, main = "Scatter Plot of Log(Gain) to Density (+ LS Regression Line)", 
+     xlab = "Log(Gain)", ylab = "Density")
+
+# Calculate the least square regression line and plot it
+fit <- lm(formula=density~gain, data=gauge)
+abline(fit, col="red")
+
+# Some more info on the line (coefficients and r-squared)
+fit
+summary(fit)
+```
+
+```{r}
+# Residual Plot for checking linearity and constant variability
+plot(fit$residuals, main = "Resildual Plot", xlab = "Log(Gain)", ylab = "Residual")
+abline(0, 0, col="red")
+
+# Histogram and QQ Plot of Residuals for checking residual normality
+hist(fit$residuals, main = "Histogram of the Residuals", xlab = "Residuals")
+qqnorm(fit$residuals, main = "Q-Q Plot of the Residuals")
+qqline(fit$residuals, col="red")
+```
+
+```{r}
+#prediction
+new <- data.frame(gain = c(log(38.6), log(426.7)))
+predict_d <- predict(fit, newdata =  new, interval='prediction' )
+predict_d
+
+#confidence & prediction bend
+pred.ci <- predict(fit, interval = "confidence")
+pred.pi <- predict(fit, interval = "prediction")
+library("ggplot2")
+p <- ggplot(gauge, aes(gain, density)) +
+  geom_point()
+mydata_ci <- cbind(gauge,pred.ci)
+mydata_pi <- cbind(gauge,pred.pi)
+
+p + geom_line(aes(y = mydata_ci$lwr), color = "red", linetype = "dashed")+
+  geom_line(aes(y = mydata_ci$upr), color = "red", linetype = "dashed") +
+geom_line(aes(y = mydata_pi$lwr), color = "blue", linetype = "dashed")+
+  geom_line(aes(y = mydata_pi$upr), color = "blue", linetype = "dashed")
+```
+
+```{r}
+gauge = read.table("gauge.txt", header = TRUE)
+gauge <- gauge[c("gain", "density")]
+head(gauge)
+```
+
+```{r}
+gauge[, 1] <- log(gauge[,1])
+head(gauge)
+```
+
+```{r}
+#Removing of measurements with density = .508
+rel_m <- which(gauge['density']!=.508)
+rel_measures <- gauge[rel_m,]
+print(dim(gauge))
+print(dim(rel_measures))
+
+```
+
+```{r}
+#Fiitting of data with omitted measurements of density = 0.508
+fit <- lm(formula=density~gain, data=rel_measures)
+new <- data.frame(gain = c(log(38.6)))
+predict_d <- predict(fit, newdata =  new, interval='prediction' )
+print(predict_d)
+```
+```{r}
+#Removing measurements with density = 0.001
+rel_m2 <- which(gauge['density']!=.001)
+rel_measures2 <- gauge[rel_m2,]
+print(dim(rel_measures2))
+```
+
+```{r}
+#Fitting of data with omitted measurements of density = 0.001
+fit <- lm(formula=density~gain, data=rel_measures2)
+new <- data.frame(gain = c(log(426.7)))
+predict_d <- predict(fit, newdata =  new, interval='prediction' )
+print(predict_d)
+```
+
+
